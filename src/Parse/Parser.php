@@ -90,8 +90,6 @@ class Parser
             $previousDepth = $function['depth'];
         }
 
-        print_r($process['children'][0]);
-
         return $process['children'][0];
     }
 
