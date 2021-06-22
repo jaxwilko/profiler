@@ -54,9 +54,7 @@ class Watcher
 
     public static function output(string $filePath = null)
     {
-        file_put_contents(__DIR__ . '/../log', static::$handler->getData());
-
-        $result = Parser::make(static::$handler->getData());
+        $result = Parser::make(static::$handler->getFile());
 
         if ($filePath) {
             file_put_contents(

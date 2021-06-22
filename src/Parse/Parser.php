@@ -10,10 +10,79 @@ class Parser
     const TABLE_ROW_NODE = 'tr';
     const TABLE_DATA_NODE = 'td';
 
-    public static function make(string $src)
+    public static function make(string $file): array
     {
         $parser = new static();
-        return $parser->parseString($src);
+        return $parser->parseFile($file);
+    }
+
+    public function parseFile(string $file): array
+    {
+        $fp = fopen($file, 'r');
+        $data = [];
+
+        while (!feof($fp) && $line = fgetcsv($fp, 0, "\t")) {
+            if (!isset($line[0]) || !is_numeric($line[0])) {
+                continue;
+            }
+
+            if (isset($line[2]) && $line[2] !== '0') {
+                if (!isset($data[$line[1]])) {
+                    continue;
+                }
+                switch ($line[2]) {
+                    case '1':
+                        $data[$line[1]]['endTime'] = $line[3];
+                        $data[$line[1]]['endMemory'] = $line[4];
+                        break;
+                    case 'R':
+                        $data[$line[1]]['return'] = $line[5];
+                        break;
+                }
+                continue;
+            }
+
+            $data[$line[1]] = [
+                'id' => $line[1],
+                'depth' => ((int) $line[0]) - 2,
+                'startTime' => $line[3],
+                'startMemory' => $line[4],
+                'function' => $line[5],
+                'file' => $line[8],
+                'line' => $line[9],
+                'args' => $this->getLineArgs($line),
+            ];
+        }
+
+        $process = [];
+        $thread = &$process;
+
+        $previousDepth = 0;
+
+        foreach ($data as $id => $line) {
+
+            $function = $line;
+
+            if ($function['depth'] === $previousDepth) {
+                $thread['children'][] = $function;
+            }
+
+            if ($function['depth'] > $previousDepth) {
+                $thread = &$thread['children'][count($thread['children']) - 1];
+                $thread['children'][] = $function;
+            }
+
+            if ($function['depth'] < $previousDepth) {
+                $thread = &$process;
+                for ($i = 0; $i < $function['depth']; $i++) {
+                    $thread = &$thread['children'][count($thread['children']) - 1];
+                }
+            }
+
+            $previousDepth = $function['depth'];
+        }
+
+        return $process['children'][0];
     }
 
     public function parseString(string $src): array
