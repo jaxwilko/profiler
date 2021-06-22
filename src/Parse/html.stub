@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Process view</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.min.js"></script>
+        <link rel="preconnect" href="https://fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;700&display=swap" rel="stylesheet">
+        <style>
+            * {
+                font-family: 'Roboto', sans-serif;
+                font-size: 14px;
+            }
+            body {
+                background: #cece;
+            }
+            span {
+                font-weight: 100;
+            }
+            strong {
+                font-weight: 700;
+            }
+            .bl {
+                border-left: solid 1px transparent;
+            }
+            .data-row {
+                background: #fff;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 6px;
+            }
+            .btn-function {
+                color: #fff;
+            }
+            .btn-function:hover, .btn-function:active {
+                color: #fff;
+            }
+            .btn-check:focus+.btn.btn-function, .btn.btn-function:focus {
+                box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.1);
+            }
+            .data-row .table tr:last-child th, .data-row .table tr:last-child td {
+                border-bottom-width: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app" class="container p-2 ms-0"></div>
+        <script type="application/json" id="data">%%data%%</script>
+        <script>
+            const colours = ["#292D3E", "#32364C", "#4D5478", "#676E95", "#FF5370", "#F78C6C", "#FFCB6B", "#C3E88D", "#82AAFF", "#C792EA", "#070D1B", "#1E3652", "#5387DA", "#5DACEF", "#B63031", "#1C0C16", "#8C6989", "#3D478E", "#5DADF6", "#3262AE", "#525BA0"];
+            let colourIndex = 0;
+
+            function getColour() {
+                if (colourIndex >= colours.length) {
+                    colourIndex = 0;
+                }
+
+                return colours[colourIndex++];
+            }
+
+            function makeChildren(children, colour) {
+                let html = "", i;
+                for (i in children) {
+                    if (!children.hasOwnProperty(i)) {
+                        continue;
+                    }
+                    html += makeHtml(children[i], colour);
+                }
+                return html;
+            }
+
+            function makeHtml(data, colour) {
+                return `
+                    <div class="row w-100 ps-1 ms-3 pb-2 pt-3 bl" style="border-color: ${colour};">
+                        <div class="col-12">
+                            <button class="btn btn-function" style="border-color: ${colour}; background: ${colour};">
+                                ${data.function}
+                            </button>
+                            <span class="ps-2">${data.startTime} / ${data.startMemory}</span>
+                            <div class="row d-none data-row">
+                                <div class="col-12">
+                                    <table class="table mb-0">
+                                        <tr>
+                                            <th>ID</th>
+                                            <td>${data.id}-${data.depth}</td>
+                                            <th>Function</th>
+                                            <td>${data.function}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Args</th>
+                                            <td>${data.args}</td>
+                                            <th>Return</th>
+                                            <td>${data.return || "NULL"}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Start Time</th>
+                                            <td>${data.startTime}</td>
+                                            <th>End Time</th>
+                                            <td>${data.endTime}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Start Memory</th>
+                                            <td>${data.startMemory}</td>
+                                            <th>End Memory</th>
+                                            <td>${data.endMemory}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        ${typeof data.children !== "undefined" && data.children.length ? makeChildren(data.children, getColour()) : ""}
+                    </div>
+                `;
+            }
+
+            document.querySelector("#app").innerHTML = makeHtml(
+                JSON.parse(document.querySelector("#data").textContent),
+                getColour()
+            );
+
+            document.querySelectorAll(".btn-function").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    btn.parentElement.querySelector(".data-row").classList.toggle("d-none");
+                });
+            });
+        </script>
+    </body>
+</html>
