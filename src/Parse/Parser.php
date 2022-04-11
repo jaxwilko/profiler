@@ -63,19 +63,28 @@ class Parser
 
             $function = $line;
 
+            if (!isset($thread['children'])) {
+                $thread['children'] = [];
+            }
+
             if ($function['depth'] === $previousDepth) {
                 $thread['children'][] = $function;
             }
 
             if ($function['depth'] > $previousDepth) {
-                $thread = &$thread['children'][count($thread['children']) - 1];
+                $children = count($thread['children']);
+                $thread = &$thread['children'][$children ? $children - 1 : 0];
                 $thread['children'][] = $function;
             }
 
-            if ($function['depth'] < $previousDepth) {
+            if ($function['depth'] < $previousDepth && !empty($process['children'])) {
                 $thread = &$process;
                 for ($i = 0; $i < $function['depth']; $i++) {
-                    $thread = &$thread['children'][count($thread['children']) - 1];
+                    if (!isset($thread['children'])) {
+                        break;
+                    }
+                    $children = count($thread['children']);
+                    $thread = &$thread['children'][$children ? $children - 1 : 0];
                 }
             }
 
@@ -140,19 +149,28 @@ class Parser
 
             $function = $line;
 
+            if (!isset($thread['children'])) {
+                $thread['children'] = [];
+            }
+
             if ($function['depth'] === $previousDepth) {
                 $thread['children'][] = $function;
             }
 
             if ($function['depth'] > $previousDepth) {
-                $thread = &$thread['children'][count($thread['children']) - 1];
+                $children = count($thread['children']);
+                $thread = &$thread['children'][$children ? $children - 1 : 0];
                 $thread['children'][] = $function;
             }
 
-            if ($function['depth'] < $previousDepth) {
+            if ($function['depth'] < $previousDepth && !empty($process['children'])) {
                 $thread = &$process;
                 for ($i = 0; $i < $function['depth']; $i++) {
-                    $thread = &$thread['children'][count($thread['children']) - 1];
+                    if (!isset($thread['children'])) {
+                        break;
+                    }
+                    $children = count($thread['children']);
+                    $thread = &$thread['children'][$children ? $children - 1 : 0];
                 }
             }
 
@@ -195,19 +213,28 @@ class Parser
                 'hierarchy' => $hierarchy
             ];
 
+            if (!isset($thread['children'])) {
+                $thread['children'] = [];
+            }
+
             if ($hierarchy === $previousHierarchy) {
                 $thread['children'][] = $function;
             }
 
             if ($hierarchy > $previousHierarchy) {
-                $thread = &$thread['children'][count($thread['children']) - 1];
+                $children = count($thread['children']);
+                $thread = &$thread['children'][$children ? $children - 1 : 0];
                 $thread['children'][] = $function;
             }
 
-            if ($hierarchy < $previousHierarchy) {
+            if ($hierarchy < $previousHierarchy && !empty($process['children'])) {
                 $thread = &$process;
                 for ($i = 0; $i < $hierarchy; $i++) {
-                    $thread = &$thread['children'][count($thread['children']) - 1];
+                    if (!isset($thread['children'])) {
+                        break;
+                    }
+                    $children = count($thread['children']);
+                    $thread = &$thread['children'][$children ? $children - 1 : 0];
                 }
             }
 
