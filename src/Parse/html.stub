@@ -15,10 +15,13 @@
                 background: #cece;
             }
             span {
-                font-weight: 100;
+                font-weight: 600;
             }
             strong {
                 font-weight: 700;
+            }
+            button svg {
+                width: 17px;
             }
             .bl {
                 border-left: solid 1px transparent;
@@ -47,7 +50,7 @@
         <div id="app" class="container p-2 ms-0"></div>
         <script type="application/json" id="data">%%data%%</script>
         <script>
-            const colours = ["#292D3E", "#32364C", "#4D5478", "#676E95", "#FF5370", "#F78C6C", "#FFCB6B", "#C3E88D", "#82AAFF", "#C792EA", "#070D1B", "#1E3652", "#5387DA", "#5DACEF", "#B63031", "#1C0C16", "#8C6989", "#3D478E", "#5DADF6", "#3262AE", "#525BA0"];
+            const colours = ["#292D3E", "#32364C", "#4D5478", "#676E95", "#FF5370", "#F78C6C", "#FFCB6B", "#74914c", "#82AAFF", "#C792EA", "#070D1B", "#1E3652", "#5387DA", "#5DACEF", "#B63031", "#1C0C16", "#8C6989", "#3D478E", "#5DADF6", "#3262AE", "#525BA0"];
             let colourIndex = 0;
 
             function getColour() {
@@ -71,12 +74,23 @@
 
             function makeHtml(data, colour) {
                 return `
-                    <div class="row w-100 ps-1 ms-3 pb-2 pt-3 bl" style="border-color: ${colour};">
+                    <div class="row children w-100 ps-1 ms-3 pb-2 pt-3 bl" style="border-color: ${colour};">
                         <div class="col-12">
                             <button class="btn btn-function" style="border-color: ${colour}; background: ${colour};">
                                 ${data.function}
                             </button>
-                            <span class="ps-2">${data.startTime} / ${data.startMemory}</span>
+                            <span class="ps-2">${data.startTime} / ${data.endTime}
+                                ${typeof data.children !== "undefined" && data.children.length
+                                    ? `
+                                        <button class="btn btn-sm ms-2 fold">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </button>
+                                    `
+                                    : ""
+                                }
+                            </span>
                             <div class="row d-none data-row">
                                 <div class="col-12">
                                     <table class="table mb-0">
@@ -121,6 +135,27 @@
             document.querySelectorAll(".btn-function").forEach(function (btn) {
                 btn.addEventListener("click", function () {
                     btn.parentElement.querySelector(".data-row").classList.toggle("d-none");
+                });
+            });
+
+            document.querySelectorAll(".btn.fold").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    if (btn.classList.contains("folded")) {
+                        btn.classList.remove("folded");
+                        btn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        `;
+                    } else {
+                        btn.classList.add("folded");
+                        btn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        `;
+                    }
+                    btn.parentElement.parentElement.parentElement.querySelector(".children").classList.toggle("d-none");
                 });
             });
         </script>
