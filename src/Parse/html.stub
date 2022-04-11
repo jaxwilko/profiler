@@ -155,7 +155,9 @@
                             </svg>
                         `;
                     }
-                    btn.parentElement.parentElement.parentElement.querySelector(".children").classList.toggle("d-none");
+                    btn.parentElement.parentElement.parentElement.querySelectorAll(".row > .children").forEach(function (child) {
+                        child.classList.toggle("d-none");
+                    });
                 });
             });
         </script>
