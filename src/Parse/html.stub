@@ -129,7 +129,7 @@
 
             document.querySelector("#app").innerHTML = JSON.parse(document.querySelector("#data").textContent).map(function (root) {
                 return makeHtml(root, getColour());
-            });
+            }).join("\n");
 
             document.querySelectorAll(".btn-function").forEach(function (btn) {
                 btn.addEventListener("click", function () {
