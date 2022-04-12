@@ -127,10 +127,9 @@
                 `;
             }
 
-            document.querySelector("#app").innerHTML = makeHtml(
-                JSON.parse(document.querySelector("#data").textContent),
-                getColour()
-            );
+            document.querySelector("#app").innerHTML = JSON.parse(document.querySelector("#data").textContent).map(function (root) {
+                return makeHtml(root, getColour());
+            });
 
             document.querySelectorAll(".btn-function").forEach(function (btn) {
                 btn.addEventListener("click", function () {

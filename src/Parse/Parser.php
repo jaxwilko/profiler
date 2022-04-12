@@ -22,226 +22,72 @@ class Parser
         $data = [];
 
         while (!feof($fp) && $line = fgetcsv($fp, 0, "\t")) {
-            if (!isset($line[0]) || !is_numeric($line[0])) {
-                continue;
-            }
-
-            if (isset($line[2]) && $line[2] !== '0') {
-                if (!isset($data[$line[1]])) {
-                    continue;
-                }
-                switch ($line[2]) {
-                    case '1':
-                        $data[$line[1]]['endTime'] = $line[3];
-                        $data[$line[1]]['endMemory'] = $line[4];
-                        break;
-                    case 'R':
-                        $data[$line[1]]['return'] = $line[5];
-                        break;
-                }
-                continue;
-            }
-
-            $data[$line[1]] = [
-                'id' => $line[1],
-                'depth' => ((int) $line[0]) - 2,
-                'startTime' => $line[3],
-                'startMemory' => $line[4],
-                'function' => $line[5],
-                'file' => $line[8],
-                'line' => $line[9],
-                'args' => $this->getLineArgs($line),
-            ];
-        }
-
-        $process = [];
-        $thread = &$process;
-
-        $previousDepth = 0;
-
-        foreach ($data as $id => $line) {
-
-            $function = $line;
-
-            if (!isset($thread['children'])) {
-                $thread['children'] = [];
-            }
-
-            if ($function['depth'] === $previousDepth) {
-                $thread['children'][] = $function;
-            }
-
-            if ($function['depth'] > $previousDepth) {
-                $children = count($thread['children']);
-                $thread = &$thread['children'][$children ? $children - 1 : 0];
-                $thread['children'][] = $function;
-            }
-
-            if ($function['depth'] < $previousDepth && !empty($process['children'])) {
-                $thread = &$process;
-                for ($i = 0; $i < $function['depth']; $i++) {
-                    if (!isset($thread['children'])) {
-                        break;
-                    }
-                    $children = count($thread['children']);
-                    $thread = &$thread['children'][$children ? $children - 1 : 0];
-                }
-            }
-
-            $previousDepth = $function['depth'];
-        }
-
-        return $process['children'][0];
-    }
-
-    public function parseString(string $src): array
-    {
-        $lines = array_filter(explode(PHP_EOL, $src));
-        // clean input
-        unset($lines[count($lines) - 1], $lines[0], $lines[1], $lines[2]);
-        // map strings to arrays
-        $lines = array_values(array_map(function ($line) {
-            return str_getcsv($line, "\t");
-        }, $lines));
-        // clean values before tracking started
-        while (count($lines[0]) < 6) {
-            unset($lines[0]);
-            $lines = array_values($lines);
-        }
-
-        $data = [];
-
-        foreach ($lines as $line) {
-            if (isset($line[2]) && $line[2] !== '0') {
-                if (!isset($data[$line[1]])) {
-                    continue;
-                }
-                switch ($line[2]) {
-                    case '1':
-                        $data[$line[1]]['endTime'] = $line[3];
-                        $data[$line[1]]['endMemory'] = $line[4];
-                        break;
-                    case 'R':
-                        $data[$line[1]]['return'] = $line[5];
-                        break;
-                }
-                continue;
-            }
-
-            $data[$line[1]] = [
-                'id' => $line[1],
-                'depth' => ((int) $line[0]) - 2,
-                'startTime' => $line[3],
-                'startMemory' => $line[4],
-                'function' => $line[5],
-                'file' => $line[8],
-                'line' => $line[9],
-                'args' => $this->getLineArgs($line),
-            ];
-        }
-
-        $process = [];
-        $thread = &$process;
-
-        $previousDepth = 0;
-
-        foreach ($data as $id => $line) {
-
-            $function = $line;
-
-            if (!isset($thread['children'])) {
-                $thread['children'] = [];
-            }
-
-            if ($function['depth'] === $previousDepth) {
-                $thread['children'][] = $function;
-            }
-
-            if ($function['depth'] > $previousDepth) {
-                $children = count($thread['children']);
-                $thread = &$thread['children'][$children ? $children - 1 : 0];
-                $thread['children'][] = $function;
-            }
-
-            if ($function['depth'] < $previousDepth && !empty($process['children'])) {
-                $thread = &$process;
-                for ($i = 0; $i < $function['depth']; $i++) {
-                    if (!isset($thread['children'])) {
-                        break;
-                    }
-                    $children = count($thread['children']);
-                    $thread = &$thread['children'][$children ? $children - 1 : 0];
-                }
-            }
-
-            $previousDepth = $function['depth'];
-        }
-
-        return $process['children'][0];
-    }
-
-    public function parseStringHtml(string $src): array
-    {
-        $doc = new \DOMDocument();
-        $doc->loadHTML($src);
-
-        $doc = $doc->childNodes->item(1) // html
-        ->childNodes->item(0) // body
-        ->childNodes->item(0); // table
-
-        $process = [];
-        $thread = &$process;
-
-        $previousHierarchy = 0;
-
-        foreach ($doc->childNodes as $tr) {
             if (
-                $tr->nodeName !== static::TABLE_ROW_NODE
-                || $tr->childNodes->item(0)->nodeName !== static::TABLE_DATA_NODE
+                (!isset($line[0]) || !is_numeric($line[0]))
+                || (empty($data) && $line[2] !== '0')
+                || (isset($line[2]) && $line[2] === 'A')
             ) {
                 continue;
             }
 
-            $hierarchy = $this->getFunctionHierarchy($tr->childNodes->item(3)->nodeValue);
-
-            $function = [
-                'id' => $tr->childNodes->item(0)->nodeValue,
-                'time' => $tr->childNodes->item(1)->nodeValue,
-                'memory' => $tr->childNodes->item(2)->nodeValue,
-                'function' => $tr->childNodes->item(4)->nodeValue,
-                'location' => $tr->childNodes->item(5)->nodeValue,
-                'hierarchy' => $hierarchy
-            ];
-
-            if (!isset($thread['children'])) {
-                $thread['children'] = [];
-            }
-
-            if ($hierarchy === $previousHierarchy) {
-                $thread['children'][] = $function;
-            }
-
-            if ($hierarchy > $previousHierarchy) {
-                $children = count($thread['children']);
-                $thread = &$thread['children'][$children ? $children - 1 : 0];
-                $thread['children'][] = $function;
-            }
-
-            if ($hierarchy < $previousHierarchy && !empty($process['children'])) {
-                $thread = &$process;
-                for ($i = 0; $i < $hierarchy; $i++) {
-                    if (!isset($thread['children'])) {
+            if (isset($data[$line[1]]) && isset($line[2])) {
+                switch ($line[2]) {
+                    case '1':
+                        $data[$line[1]]['endTime'] = $line[3];
+                        $data[$line[1]]['endMemory'] = $line[4];
                         break;
-                    }
-                    $children = count($thread['children']);
-                    $thread = &$thread['children'][$children ? $children - 1 : 0];
+                    case 'R':
+                        $data[$line[1]]['return'] = $line[5];
+                        break;
                 }
+                continue;
             }
 
-            $previousHierarchy = $hierarchy;
+            $data[$line[1]] = [
+                'id' => $line[1],
+                'depth' => (int) $line[0],
+                'startTime' => $line[3],
+                'startMemory' => $line[4],
+                'function' => $line[5],
+                'file' => $line[8],
+                'line' => $line[9],
+                'args' => $this->getLineArgs($line),
+                'children' => []
+            ];
         }
 
-        return $process['children'][0];
+        $process = ['children' => []];
+        $thread = &$process['children'];
+        $scopes = [];
+
+        $previousDepth = 0;
+
+        foreach ($data as $id => $function) {
+            if ($function['depth'] === $previousDepth) {
+                $thread[] = $function;
+            }
+
+            if ($function['depth'] > $previousDepth) {
+                $scopes[] = &$thread;
+                if (!empty($thread)) {
+                    $thread = &$thread[count($thread) - 1]['children'];
+                }
+                $thread[] = $function;
+            }
+
+            if ($function['depth'] < $previousDepth) {
+                for ($i = $previousDepth - $function['depth']; $i !== 0; $i--) {
+                    $thread = &$scopes[count($scopes) - 1];
+                    array_pop($scopes);
+                }
+
+                $thread[] = $function;
+            }
+
+            $previousDepth = $function['depth'];
+        }
+
+        return $process['children'];
     }
 
     protected function getLineArgs(array $line): string
@@ -251,18 +97,5 @@ class Parser
         }
 
         return '[' . implode(', ', array_slice($line, 11, $line[10])) . ']';
-    }
-
-    protected function getFunctionHierarchy(string $str): int
-    {
-        return substr_count($str, ' ') - 1;
-    }
-
-    protected function getHtml(DOMElement $element)
-    {
-        $doc = new DOMDocument();
-        $cloned = $element->cloneNode(true);
-        $doc->appendChild($doc->importNode($cloned, true));
-        return $doc->saveHTML();
     }
 }
