@@ -44,15 +44,18 @@ class Parser
             }
 
             $data[$line[1]] = [
-                'id' => $line[1],
-                'depth' => (int) $line[0],
-                'startTime' => $line[3],
-                'startMemory' => $line[4],
-                'function' => $line[5],
-                'file' => $line[8],
-                'line' => $line[9],
-                'args' => $this->getLineArgs($line),
-                'children' => []
+                'id'            => $line[1],
+                'depth'         => (int) $line[0],
+                'startTime'     => $line[3],
+                'endTime'       => null,
+                'startMemory'   => $line[4],
+                'endMemory'     => null,
+                'function'      => $line[5],
+                'file'          => $line[8],
+                'line'          => $line[9],
+                'args'          => $this->getLineArgs($line),
+                'return'        => null,
+                'children'      => []
             ];
         }
 
